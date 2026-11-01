@@ -2,8 +2,8 @@
 
 Machine Learning project (Problem 51): forecasting State/UT cyber-crime registrations and grouping States by growth profile, for cyber-police planning.
 
-**Course:** B.Sc. (H) Computer Science, Semester VI — Machine Learning
-**Author:** Abhirup Chakraborty (24020570039)
+**Course:** B.Sc. (H) Computer Science, Semester V — Machine Learning
+
 
 **Live dashboard:** https://abhirupchak.github.io/cyber-crime-forecasting-51/
 
