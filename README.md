@@ -1,6 +1,6 @@
 # Cyber-Crime Forecasting and State Profiling (India, 2018–2022)
 
-Machine Learning project (Problem 51): forecasting State/UT cyber-crime registrations and grouping States by growth profile, for cyber-police planning.
+Machine Learning project (Problem 51): forecasting State/UT cyber-crime registrations and grouping States into service tiers by five-year profile, for cyber-police planning.
 
 **Course:** B.Sc. (H) Computer Science, Semester V — Machine Learning
 
@@ -11,7 +11,7 @@ Machine Learning project (Problem 51): forecasting State/UT cyber-crime registra
 
 1. **Forecast** 2022 registrations from 2018–2021 with persistence, pooled OLS (State fixed effects + trend), ridge, and quadratic-ridge. Evaluated one year ahead.
 2. **Relate** national totals to TRAI internet/tele-density and NPCI/RBI UPI penetration, and merge State-level tele-density (Problem 39) via TRAI service-area circles with a documented mapping.
-3. **Cluster** States by five-year log-growth profiles using k-means and Ward hierarchical clustering.
+3. **Group** States by five-year log profiles into service tiers using k-means and Ward hierarchical clustering; the tiers separate scale far more than growth.
 
 ## Key results (train 2018–2021, test 2022, 35 entities)
 
@@ -61,7 +61,7 @@ Seed is fixed at 42. `datafile.xls` needs the `calamine` engine (installed via `
 
 ## Caveats
 
-Registered cases reflect reporting, not true incidence. Clusters are operational groupings for resource planning, not rankings of State safety. National-level penetration correlations are ecological and not transferable to individuals.
+Registered cases reflect reporting, not true incidence. The four clusters are scale-based service tiers, not growth forecasts or rankings of State safety. National-level penetration correlations are ecological and not transferable to individuals.
 
 ## License
 

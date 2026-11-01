@@ -23,8 +23,8 @@ clu = pd.read_csv(os.path.join(OUT, "clusters.csv"))
 ai = pd.read_csv(os.path.join(OUT, "allindia_penetration.csv"))
 tdm = pd.read_csv(os.path.join(OUT, "table_teledensity.csv"))
 
-CNAME = {0: "C0 · Micro-UT / very low", 1: "C1 · Hill, NE and small",
-         2: "C2 · Mainstream mid-volume", 3: "C3 · High-volume fast-riser"}
+CNAME = {0: "C0 · Very low volume", 1: "C1 · Hill, NE and small",
+         2: "C2 · Mainstream mid-volume", 3: "C3 · High volume"}
 COLOR = {0: "#6b7a8f", 1: "#2e86ab", 2: "#e0a458", 3: "#c0392b"}
 data = per.merge(clu[["state", "kmeans", "cagr_18_21"]], on="state", how="left")
 data["cluster"] = data["kmeans"].map(CNAME)
@@ -109,7 +109,7 @@ kpi = f"""
   <div class="kpi"><div class="kpi-num">{total22:,}</div><div class="kpi-lab">2022 registrations</div><div class="kpi-sub">+24.7% CAGR since 2018</div></div>
   <div class="kpi"><div class="kpi-num">1,360</div><div class="kpi-lab">persistence benchmark RMSE</div><div class="kpi-sub">ridge 1,855 · better typical large State</div></div>
   <div class="kpi"><div class="kpi-num">0.987</div><div class="kpi-lab">r, log cases vs log UPI</div><div class="kpi-sub">internet r = 0.981</div></div>
-  <div class="kpi"><div class="kpi-num">4</div><div class="kpi-lab">State growth clusters</div><div class="kpi-sub">k-means + Ward</div></div>
+  <div class="kpi"><div class="kpi-num">4</div><div class="kpi-lab">service tiers</div><div class="kpi-sub">k-means + Ward</div></div>
 </div>"""
 
 CSS = """
@@ -202,7 +202,7 @@ HTML = f"""<!DOCTYPE html>
   <div class="eyebrow">Machine Learning · Problem 51 · SDG 16 &amp; 9</div>
   <h1>Forecasting and grouping Indian States for cyber-police planning</h1>
   <p class="sub">NCRB State/UT cyber-crime registrations, 2018–2022. One-year-ahead forecasts, the link to digital
-  penetration, and four growth clusters for resource planning.</p>
+  penetration, and four service tiers for resource planning.</p>
   <div class="meta">Abhirup Chakraborty · 24020570039 · B.Sc. (H) Computer Science, Semester V</div>
 </div></div>
 
@@ -266,12 +266,13 @@ HTML = f"""<!DOCTYPE html>
   </section>
 
   <section id="clusters">
-    <h2>3 · Four growth personalities</h2>
-    <p class="lede">States are clustered on their five-year log-growth profile. Silhouette peaks at k = 2; k = 4 is retained
-    because four groups are operationally useful.</p>
+    <h2>3 · Four service tiers</h2>
+    <p class="lede">States are grouped by their five-year profiles. The groups separate scale far more than growth
+    (94% of level variance, 6% of growth), so read them as service tiers. Silhouette peaks at k = 2; k = 4 is retained
+    for planning.</p>
     <div class="grid2">{cluster_cards()}</div>
     <div class="grid2" style="margin-top:16px">
-      <div class="card"><img class="fig" src="assets/fig3_clusters.png" alt="Growth profiles by cluster">
+      <div class="card"><img class="fig" src="assets/fig3_clusters.png" alt="Case trajectories by cluster">
         <p class="cap">Thin lines: individual States. Thick: cluster mean.</p></div>
       <div class="card"><h3>Cluster separation</h3>
         <table><thead><tr><th>k</th><th>k-means</th><th>Ward</th><th>Inertia</th></tr></thead><tbody>{sil_rows()}</tbody></table>
@@ -280,7 +281,7 @@ HTML = f"""<!DOCTYPE html>
     </div>
     <div class="card" style="margin-top:16px"><h3>Ward dendrogram: which States merge first</h3>
       <img class="fig" src="assets/fig4_dendrogram.png" alt="Ward dendrogram">
-      <p class="cap">Read left to right: the first joins are the most similar growth profiles.</p></div>
+      <p class="cap">Read left to right: the first joins are the most similar profiles.</p></div>
     <div class="note" style="margin-top:16px"><b>For planning:</b> C3 States (Telangana, Karnataka, Uttar Pradesh,
     Maharashtra and peers) carry most of the caseload and need surge capacity. In C0 and C1, low counts more likely reflect
     reporting gaps than absence of harm — invest in reporting channels first.</div>
@@ -293,10 +294,10 @@ HTML = f"""<!DOCTYPE html>
       <input id="q" type="search" placeholder="Search a State or UT…" aria-label="Search state">
       <select id="f" aria-label="Filter cluster">
         <option value="">All clusters</option>
-        <option value="0">C0 · Micro-UT / very low</option>
+        <option value="0">C0 · Very low volume</option>
         <option value="1">C1 · Hill, NE and small</option>
         <option value="2">C2 · Mainstream mid-volume</option>
-        <option value="3">C3 · High-volume fast-riser</option>
+        <option value="3">C3 · High volume</option>
       </select>
     </div>
     <div class="tablewrap"><table id="stateTable">
