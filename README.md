@@ -23,6 +23,10 @@ Machine Learning project (Problem 51): forecasting State/UT cyber-crime registra
 | Ridge (alpha = 0.1) | 1,854.7 | 646.5 | 0.742 |
 | Quadratic + Ridge (alpha = 1.0) | 2,569.5 | 967.0 | 0.505 |
 
+Persistence is the **benchmark**, not the headline. Across three rolling origins (2020–22) it has the lowest mean RMSE
+(**999.9**, MASE 1.00). Ridge is better for the typical large State (median error **394** vs 877 on the ten largest),
+and excluding Telangana's 2022 jump it beats persistence (**816** vs 1,082 RMSE).
+
 - National CAGR 2018–2022: **24.7%** (27,248 → 65,893).
 - log(cases) vs log(internet subscribers): **r = 0.981**; vs log(UPI volume): **r = 0.987**; vs tele-density: **r = −0.980** (denominator artefact).
 - State-level tele-density merge adds little: ridge RMSE **1,833** vs 1,855 without it; 2022 cross-section **r = −0.03**.

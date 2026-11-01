@@ -98,7 +98,9 @@ P('Problem. State cyber-crime registrations in India are rising fast, but five y
   'Methods. Using NCRB State/UT registrations for 2018–2022 (36 entities), we test one-year-ahead linear, polynomial and ridge trend models '
   'against a persistence baseline, relate national totals to TRAI internet/tele-density and NPCI/RBI UPI penetration, and cluster States '
   'by their growth profiles using k-means and Ward hierarchical clustering.')
-P('Results: Persistence is hardest to beat (RMSE 1,360; MAE 581; R² 0.861); ridge improves on trend models (RMSE 1,855; R² 0.742) but not on persistence. '
+P('Results: Across three backtest years, persistence is the strongest aggregate benchmark (mean RMSE 1,000; MASE 1.00); the ridge model '
+  '(RMSE 1,855 in 2022) is better for the typical large State — median error 394 against 877 on the ten largest — but one unprecedented jump '
+  '(Telangana) decides the aggregate (816 against 1,082 once it is excluded). '
   'National registrations track internet subscribers (r = 0.981) and UPI volume (r = 0.987), while headline tele-density falls (91.45% to 84.56%) '
   'as a denominator artefact. A State-level merge with TRAI service-area tele-density adds little once State effects and trend are included '
   '(ridge RMSE 1,833 against 1,855) and the 2022 cross-section is essentially flat (r = −0.03). '
@@ -164,17 +166,25 @@ P('For profiling, each State is represented by its five-year log-count vector, s
 
 # ---------------- 4 RESULTS ----------------
 H('4. Results')
-P('4.1 Forecasting. Every learned trend model loses to persistence. Ridge is the best learned model '
-  'but still 36% worse in RMSE; the quadratic overfits reversals such as Assam\'s fall from 4,846 to 1,733 and Karnataka\'s rebound from 8,136 to 12,556. '
+P('4.1 Forecasting. Persistence — predict next year as this year — is the benchmark, not the answer. A learned model only earns its '
+  'complexity if it beats that free forecast. Across three rolling origins (train on all years before 2020, 2021 and 2022), persistence has '
+  'the lowest mean RMSE (999.9) and a MASE of 1.00; the best learned model, ridge, is 49% worse (1,485.6; MASE 1.48). With five annual points '
+  'and pandemic-era shocks, year-on-year change is dominated by noise, so copying the last value is hard to beat in aggregate. '
   'The shared OLS slope is 0.193 log units per year, roughly 21% annual growth.')
-P('Table 1. Which model should a planner trust for 2022? (35 entities, counts; best value in bold.)', b=True, size=9)
-table(['Model', 'RMSE', 'MAE', 'R²'],
-      [['Persistence (2022 = 2021)', '1,359.8', '580.8', '0.861'],
-       ['State mean 2018–21', '1,994.0', '730.0', '0.702'],
-       ['Pooled OLS (State effects + trend)', '1,909.6', '717.8', '0.727'],
-       ['Ridge, alpha = 0.1', '1,854.7', '646.5', '0.742'],
-       ['Quadratic + Ridge, alpha = 1.0', '2,569.5', '967.0', '0.505']],
+P('That aggregate hides where the learned model earns its place. On the ten highest-volume States in 2022, ridge\'s median absolute error is '
+  '394 cases against 877 for persistence; across all 35 entities persistence\'s median is 64, because most small States barely move. Two States '
+  'decide the aggregate: Telangana (persistence error 4,994, ridge 9,888) and Karnataka (4,420 against 451) supply 69% of persistence\'s squared '
+  'error. Excluding Telangana alone, ridge beats persistence (RMSE 816 against 1,082). We therefore report both — persistence for aggregate '
+  'budgeting, ridge for State-level planning where volumes are large and a miss is costly — and we do not claim the learned model is uniformly better.')
+P('Table 1. 2022 holdout and three-origin backtest (RMSE/MAE in cases; MASE 1.00 = as good as persistence).', b=True, size=9)
+table(['Model', '2022 RMSE', '2022 MAE', '2022 R²', 'Backtest RMSE', 'MASE'],
+      [['Persistence (2022 = 2021)', '1,359.8', '580.8', '0.861', '999.9', '1.00'],
+       ['State mean 2018–21', '1,994.0', '730.0', '0.702', '1,388.2', '1.33'],
+       ['Pooled OLS (State effects + trend)', '1,909.6', '717.8', '0.727', '1,497.4', '1.44'],
+       ['Ridge, alpha = 0.1', '1,854.7', '646.5', '0.742', '1,485.6', '1.48'],
+       ['Quadratic + Ridge, alpha = 1.0', '2,569.5', '967.0', '0.505', '1,904.8*', '1.35*']],
       bold_first_col=True)
+caption('Backtest RMSE is the mean over 2020, 2021 and 2022 origins. *Quadratic needs three training years, so it enters only the 2021 and 2022 folds.')
 
 P('Two States illustrate why a single national growth rate is misleading. Assam registered 4,846 cases in 2021 and 1,733 in 2022 — a collapse no trend '
   'model anticipated. Karnataka moved the other way, from 8,136 to 12,556, past its 2019 peak. Fig. 1 ranks these surprises. Telangana\'s actual count '
@@ -244,7 +254,8 @@ box('What this note does not say', [
 H('7. Conclusion')
 P('Five years of NCRB data support profiling more than precise point forecasting. Registrations grow at roughly 21% a year on a log scale and track '
   'digital penetration almost one-to-one at the national level, but the State-level tele-density merge shows that this association does not survive '
-  'once State effects and trend are included. Four growth clusters offer a practical basis for resource allocation. The clearest next steps are to '
+  'once State effects and trend are included. Persistence remains the aggregate benchmark; ridge\'s advantage appears only for the typical large '
+  'State, so both belong in the planning note. Four growth clusters offer a practical basis for resource allocation. The clearest next steps are to '
   'extend the series with crime-head detail and State-level internet/UPI data, and to re-train annually rather than treat any single forecast as fixed.')
 
 # ---------------- DECLARATIONS ----------------

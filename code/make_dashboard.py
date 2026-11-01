@@ -33,13 +33,28 @@ def fmt_int(v):
     try: return f"{int(round(float(v))):,}"
     except Exception: return "—"
 
+bt = pd.read_csv(os.path.join(OUT, "backtest_summary.csv"))
+
+def bt_lookup(name):
+    if name.startswith("Persistence"): key = "Persistence"
+    elif name.startswith("State mean"): key = "State mean"
+    elif name.startswith("Pooled OLS"): key = "Pooled OLS"
+    elif name.startswith("Ridge"): key = "Ridge a=0.1"
+    else: key = "Poly-2 + Ridge a=1.0"
+    row = bt[bt["Model"] == key].iloc[0]
+    return row
+
 def reg_rows():
     out = []
     for _, r in reg.iterrows():
         win = "win" if r["RMSE"] == reg["RMSE"].min() else ""
+        b = bt_lookup(r["Model"])
+        brmse = f'{b["mean_RMSE"]:,.1f}' + ("*" if b["folds"] < 3 else "")
+        mase = f'{b["MASE"]:.2f}' + ("*" if b["folds"] < 3 else "")
         out.append(
             f'<tr class="{win}"><td>{html.escape(r["Model"])}</td>'
-            f'<td>{r["RMSE"]:,.1f}</td><td>{r["MAE"]:,.1f}</td><td>{r["R2"]:.3f}</td></tr>')
+            f'<td>{r["RMSE"]:,.1f}</td>'
+            f'<td>{brmse}</td><td>{mase}</td></tr>')
     return "".join(out)
 
 def sil_rows():
@@ -92,7 +107,7 @@ total22 = int(ai["cyber"].iloc[-1])
 kpi = f"""
 <div class="kpis">
   <div class="kpi"><div class="kpi-num">{total22:,}</div><div class="kpi-lab">2022 registrations</div><div class="kpi-sub">+24.7% CAGR since 2018</div></div>
-  <div class="kpi"><div class="kpi-num">1,360</div><div class="kpi-lab">best RMSE (persistence)</div><div class="kpi-sub">R² 0.861 · MAE 581</div></div>
+  <div class="kpi"><div class="kpi-num">1,360</div><div class="kpi-lab">persistence benchmark RMSE</div><div class="kpi-sub">ridge 1,855 · better typical large State</div></div>
   <div class="kpi"><div class="kpi-num">0.987</div><div class="kpi-lab">r, log cases vs log UPI</div><div class="kpi-sub">internet r = 0.981</div></div>
   <div class="kpi"><div class="kpi-num">4</div><div class="kpi-lab">State growth clusters</div><div class="kpi-sub">k-means + Ward</div></div>
 </div>"""
@@ -185,10 +200,10 @@ HTML = f"""<!DOCTYPE html>
 
 <div class="hero"><div class="hero-in">
   <div class="eyebrow">Machine Learning · Problem 51 · SDG 16 &amp; 9</div>
-  <h1>Reports, not crimes: forecasting and grouping Indian States for cyber-police planning</h1>
+  <h1>Forecasting and grouping Indian States for cyber-police planning</h1>
   <p class="sub">NCRB State/UT cyber-crime registrations, 2018–2022. One-year-ahead forecasts, the link to digital
   penetration, and four growth clusters for resource planning.</p>
-  <div class="meta">Abhirup Chakraborty · 24020570039 · B.Sc. (H) Computer Science, Semester VI</div>
+  <div class="meta">Abhirup Chakraborty · 24020570039 · B.Sc. (H) Computer Science, Semester V</div>
 </div></div>
 
 <main>
@@ -196,18 +211,23 @@ HTML = f"""<!DOCTYPE html>
 
   <section id="forecast">
     <h2>1 · Can next year's load be predicted?</h2>
-    <p class="lede">Train on 2018–2021, test on 2022. Every learned trend model is compared with the simplest possible
-    guess: last year's count. Persistence wins — which is itself the finding.</p>
+    <p class="lede">Train on the years before each test year and predict 2020, 2021 and 2022. Every learned trend model is
+    measured against the simplest possible guess — last year's count. Persistence is the benchmark, not the headline.</p>
     <div class="grid2">
-      <div class="card"><h3>Model comparison (2022 holdout)</h3>
-        <table><thead><tr><th>Model</th><th>RMSE</th><th>MAE</th><th>R²</th></tr></thead>
+      <div class="card"><h3>2022 holdout + three-year backtest</h3>
+        <table><thead><tr><th>Model</th><th>2022 RMSE</th><th>Backtest</th><th>MASE</th></tr></thead>
         <tbody>{reg_rows()}</tbody></table>
-        <p class="cap">Green row = best. Lower RMSE/MAE is better; higher R² is better.</p></div>
+        <p class="cap">Green row = lowest 2022 RMSE. Backtest = mean RMSE over 2020–22. MASE 1.00 = persistence.
+        *Quadratic enters two folds only.</p></div>
       <div class="card"><h3>Where the forecast was wrong</h3>
         <img class="fig" src="assets/fig5_surprise.png" alt="Actual 2022 minus ridge forecast by State">
         <p class="cap">Green: under-predicted. Red: over-predicted. Telangana (+9,888) and Assam (−3,113) dominate.</p></div>
     </div>
-    <div class="note" style="margin-top:16px"><b>Planning rule of thumb:</b> use last year's count plus 20–25% as the
+    <div class="note" style="margin-top:16px"><b>Why keep a benchmark?</b> A learned model only earns its complexity by
+    beating the free forecast. Persistence wins the aggregate, but ridge is better for the typical large State — median
+    error 394 against 877 on the ten largest — and only Telangana's jump decides the headline (816 against 1,082 once it is
+    excluded). Use persistence for aggregate budgeting, ridge for State-level planning.</div>
+    <div class="note" style="margin-top:10px"><b>Planning rule of thumb:</b> use last year's count plus 20–25% as the
     baseline, not a single predicted number. The series is shock-driven, so a smooth trend line creates false confidence.</div>
   </section>
 

@@ -85,6 +85,57 @@ per=pd.DataFrame({"state":dfm["state"],"actual2022":y_te.astype(int),"persist":p
  "ols":np.round(pl).astype(int),"ridge":np.round(pr).astype(int),"poly":np.round(pp).astype(int),
  "abs_err_persist":np.abs(y_te-pers).astype(int),"abs_err_ridge":np.abs(y_te-pr).astype(int)})
 per.to_csv(os.path.join(OUT,"per_state_forecast.csv"),index=False)
+# ---------------- rolling-origin backtest: 2020, 2021, 2022 ----------------
+def _bt_design(tr_, te_):
+    e = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
+    return e.fit_transform(tr_[["state"]]), e.transform(te_[["state"]])
+bt_rows = []
+for ty in [2020, 2021, 2022]:
+    tr_ = long[long.year < ty]; te_ = long[long.year == ty]
+    Etr, Ete = _bt_design(tr_, te_)
+    ttr = tr_["t"].values.reshape(-1, 1); tte = te_["t"].values.reshape(-1, 1)
+    yv = te_["cases"].values
+    prev = long[long.year == ty-1].set_index("state").loc[te_["state"], "cases"].values
+    sm = tr_.groupby("state")["cases"].mean().loc[te_["state"]].values
+    ols = back(LinearRegression().fit(np.hstack([Etr, ttr]), tr_["logcases"]).predict(np.hstack([Ete, tte])))
+    rg = back(Ridge(alpha=0.1).fit(np.hstack([Etr, ttr]), tr_["logcases"]).predict(np.hstack([Ete, tte])))
+    preds = {"Persistence": prev, "State mean": sm, "Pooled OLS": ols, "Ridge a=0.1": rg}
+    if tr_.year.nunique() >= 3:
+        t2tr = np.hstack([ttr, ttr**2]); t2te = np.hstack([tte, tte**2])
+        preds["Poly-2 + Ridge a=1.0"] = back(Ridge(alpha=1.0).fit(np.hstack([Etr, t2tr]), tr_["logcases"]).predict(np.hstack([Ete, t2te])))
+    for name, yh in preds.items():
+        rm, ma, r2 = m(yv, yh)
+        bt_rows.append((ty, name, rm, ma, r2, float(np.median(np.abs(yv-yh)))))
+bt = pd.DataFrame(bt_rows, columns=["test_year", "Model", "RMSE", "MAE", "R2", "median_AE"])
+bt.to_csv(os.path.join(OUT, "backtest_folds.csv"), index=False)
+piv = bt.pivot(index="test_year", columns="Model", values="MAE")
+mase = (piv.div(piv["Persistence"], axis=0)).mean().rename("MASE").reset_index()
+summ = (bt.groupby("Model").agg(folds=("test_year", "count"), mean_RMSE=("RMSE", "mean"),
+        mean_MAE=("MAE", "mean"), mean_R2=("R2", "mean"), mean_median_AE=("median_AE", "mean"))
+        .reset_index().merge(mase, on="Model", how="left"))
+summ.to_csv(os.path.join(OUT, "backtest_summary.csv"), index=False)
+print(bt.to_string(index=False)); print(summ.to_string(index=False))
+# robust view of the 2022 holdout
+te22 = long[long.year == 2022]; y22 = te22["cases"].values
+Etr, Ete = _bt_design(long[long.year <= 2021], te22)
+t1 = long[long.year <= 2021]["t"].values.reshape(-1, 1); t2 = te22["t"].values.reshape(-1, 1)
+p22 = long[long.year == 2021].set_index("state").loc[te22["state"], "cases"].values
+o22 = back(LinearRegression().fit(np.hstack([Etr, t1]), long[long.year <= 2021]["logcases"]).predict(np.hstack([Ete, t2])))
+r22 = back(Ridge(alpha=0.1).fit(np.hstack([Etr, t1]), long[long.year <= 2021]["logcases"]).predict(np.hstack([Ete, t2])))
+no_tel = (te22["state"] != "Telangana").values
+top10 = long[long.year == 2021].nlargest(10, "cases")["state"]
+m10 = te22["state"].isin(top10).values
+rob = pd.DataFrame([
+    ["All 35 entities", "Persistence", m(y22, p22)[0], float(np.median(np.abs(y22-p22)))],
+    ["All 35 entities", "Ridge", m(y22, r22)[0], float(np.median(np.abs(y22-r22)))],
+    ["Excluding Telangana", "Persistence", m(y22[no_tel], p22[no_tel])[0], float(np.median(np.abs(y22-p22)[no_tel]))],
+    ["Excluding Telangana", "Ridge", m(y22[no_tel], r22[no_tel])[0], float(np.median(np.abs(y22-r22)[no_tel]))],
+    ["Top-10 volume States", "Persistence", m(y22[m10], p22[m10])[0], float(np.median(np.abs(y22-p22)[m10]))],
+    ["Top-10 volume States", "Ridge", m(y22[m10], r22[m10])[0], float(np.median(np.abs(y22-r22)[m10]))],
+], columns=["subset", "Model", "RMSE", "median_AE"])
+rob.to_csv(os.path.join(OUT, "backtest_robustness.csv"), index=False)
+print(rob.to_string(index=False))
+
 # All-India penetration correlation (cited aggregates, Dec-end; UPI FY volumes bn)
 ai=pd.DataFrame({"year":[2018,2019,2020,2021,2022],
  "cyber":[27248,44735,50035,52974,65893],

@@ -1,0 +1,7 @@
+subset,Model,RMSE,median_AE
+All 35 entities,Persistence,1359.7725334985785,64.0
+All 35 entities,Ridge,1854.7108957012806,135.06893896588645
+Excluding Telangana,Persistence,1081.5880345448484,61.5
+Excluding Telangana,Ridge,815.679485736957,130.16796078141596
+Top-10 volume States,Persistence,2518.568164652289,877.0
+Top-10 volume States,Ridge,3435.8496935315034,393.9472721465115
