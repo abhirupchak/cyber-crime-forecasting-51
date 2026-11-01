@@ -4,5 +4,3 @@ scikit-learn
 matplotlib
 scipy
 python-calamine
-pypdf
-python-docx
