@@ -85,12 +85,11 @@ def table(headers, rows, bold_first_col=False, bold_win_col=None):
 
 # ---------------- TITLE BLOCK ----------------
 p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-r = p.add_run('Reports, Not Crimes: Forecasting and Grouping Indian States for Cyber-Police Planning, 2018–2022')
+r = p.add_run('Forecasting and Grouping Indian States for Cyber-Police Planning, 2018–2022')
 r.bold = True; r.font.size = Pt(15); r.font.color.rgb = RGBColor(0x1F, 0x3A, 0x5F)
 p.paragraph_format.space_after = Pt(4)
 for line in ['Abhirup Chakraborty', 'Department of Computer Science | Roll No. 24020570039',
-             'Machine Learning (B.Sc. (H) Computer Science, Semester VI) | Problem 51',
-             'Article type: Short Communication — focused note for cyber-police planning']:
+             'Machine Learning (B.Sc. (H) Computer Science, Semester V) |']:
     P(line, size=9, align='c', space=1)
 
 # ---------------- ABSTRACT ----------------
@@ -98,8 +97,8 @@ H('Abstract')
 P('Problem. State cyber-crime registrations in India are rising fast, but five years of data make forecasting difficult. '
   'Methods. Using NCRB State/UT registrations for 2018–2022 (36 entities), we test one-year-ahead linear, polynomial and ridge trend models '
   'against a persistence baseline, relate national totals to TRAI internet/tele-density and NPCI/RBI UPI penetration, and cluster States '
-  'by their growth profiles using k-means and Ward hierarchical clustering. '
-  'Results. Persistence is hardest to beat (RMSE 1,360; MAE 581; R² 0.861); ridge improves on trend models (RMSE 1,855; R² 0.742) but not on persistence. '
+  'by their growth profiles using k-means and Ward hierarchical clustering.')
+P('Results: Persistence is hardest to beat (RMSE 1,360; MAE 581; R² 0.861); ridge improves on trend models (RMSE 1,855; R² 0.742) but not on persistence. '
   'National registrations track internet subscribers (r = 0.981) and UPI volume (r = 0.987), while headline tele-density falls (91.45% to 84.56%) '
   'as a denominator artefact. A State-level merge with TRAI service-area tele-density adds little once State effects and trend are included '
   '(ridge RMSE 1,833 against 1,855) and the 2022 cross-section is essentially flat (r = −0.03). '
@@ -149,7 +148,7 @@ P('For the State-level merge requested in the brief, TRAI Table 1.5 (service-are
   'variable. The 19-circle table and its provenance are in data/teledensity_circle.csv; the merged panel is outputs/panel_with_teledensity.csv.')
 
 # ---------------- 3 METHOD ----------------
-H('3. Method in plain language')
+H('3. Method')
 P('Training uses 2018–2021 and testing uses 2022, so no model sees the future. Four forecasters are compared. Persistence predicts 2022 as 2021. '
   'Pooled ordinary least squares fits log(1 + cases) with a separate intercept for each State and one shared time slope, so States differ in level '
   'but grow at a common rate. Ridge regression applies the same structure with an L2 penalty that shrinks noisy small-State estimates (Hoerl and '
@@ -165,7 +164,7 @@ P('For profiling, each State is represented by its five-year log-count vector, s
 
 # ---------------- 4 RESULTS ----------------
 H('4. Results')
-P('4.1 Forecasting. Table 1 answers the planner\'s question directly. Every learned trend model loses to persistence. Ridge is the best learned model '
+P('4.1 Forecasting. Every learned trend model loses to persistence. Ridge is the best learned model '
   'but still 36% worse in RMSE; the quadratic overfits reversals such as Assam\'s fall from 4,846 to 1,733 and Karnataka\'s rebound from 8,136 to 12,556. '
   'The shared OLS slope is 0.193 log units per year, roughly 21% annual growth.')
 P('Table 1. Which model should a planner trust for 2022? (35 entities, counts; best value in bold.)', b=True, size=9)
@@ -233,7 +232,7 @@ box('For a district cyber cell, next quarter', [
     fill='EAF7EE', title_color=RGBColor(0x1E, 0x6B, 0x3A))
 
 # ---------------- 6 CAUTION ----------------
-H('6. A caution we take seriously')
+H('6. Caution')
 box('What this note does not say', [
     'These are registrations, not crimes. A State can look safer because victims do not report, or worse because its police record more diligently.',
     'Our clusters are operational groupings for resource planning. They are not rankings of State safety, governance or morality, and must not be read as such.',
