@@ -21,6 +21,7 @@ sil = pd.read_csv(os.path.join(OUT, "table_silhouette.csv"))
 per = pd.read_csv(os.path.join(OUT, "per_state_forecast.csv"))
 clu = pd.read_csv(os.path.join(OUT, "clusters.csv"))
 ai = pd.read_csv(os.path.join(OUT, "allindia_penetration.csv"))
+tdm = pd.read_csv(os.path.join(OUT, "table_teledensity.csv"))
 
 CNAME = {0: "C0 · Micro-UT / very low", 1: "C1 · Hill, NE and small",
          2: "C2 · Mainstream mid-volume", 3: "C3 · High-volume fast-riser"}
@@ -46,6 +47,16 @@ def sil_rows():
         f'<tr><td>{int(r["k"])}</td><td>{r["km_sil"]:.3f}</td>'
         f'<td>{r["ward_sil"]:.3f}</td><td>{r["inertia"]:.1f}</td></tr>'
         for _, r in sil.iterrows())
+
+def td_rows():
+    out = []
+    for _, r in tdm.iterrows():
+        c = "—" if pd.isna(r["coef_teledensity"]) else f'{r["coef_teledensity"]:.4f}'
+        win = "win" if r["RMSE"] == tdm["RMSE"].min() else ""
+        out.append(
+            f'<tr class="{win}"><td>{html.escape(r["Model"])}</td><td>{r["RMSE"]:,.1f}</td>'
+            f'<td>{r["MAE"]:,.1f}</td><td>{r["R2"]:.3f}</td><td>{c}</td></tr>')
+    return "".join(out)
 
 def cluster_cards():
     cards = []
@@ -212,8 +223,26 @@ HTML = f"""<!DOCTYPE html>
     <div class="card" style="margin-top:16px"><img class="fig" src="assets/fig1_allindia.png" alt="All-India cyber cases vs internet and UPI">
       <p class="cap">All-India registrations against internet subscribers and UPI volume, 2018–2022.</p></div>
     <div class="warn" style="margin-top:16px"><b>Ecological, not individual.</b> More connected, more digital-payment-heavy
-    India registers more cyber-crime. The data cannot say anything about an individual user's risk, and TRAI reports circles
-    rather than States, so a State-level join would be misleading.</div>
+    India registers more cyber-crime. The data cannot say anything about an individual user's risk. TRAI reports circles
+    rather than States, so the State-level merge below is necessarily approximate.</div>
+
+    <h3 style="margin:26px 0 6px;color:#1f3a5f;font-size:16px">State-level check: does tele-density help?</h3>
+    <p class="lede">The brief asks for a merge with tele-density (Problem 39). TRAI publishes it by licence service area, so
+    each State was mapped to its circle and the merged value added to the forecast model. It does not improve prediction —
+    and the State cross-section is flat.</p>
+    <div class="grid2">
+      <div class="card"><h3>Forecast with merged tele-density (2022 holdout)</h3>
+        <table><thead><tr><th>Model</th><th>RMSE</th><th>MAE</th><th>R²</th><th>coef.</th></tr></thead>
+        <tbody>{td_rows()}</tbody></table>
+        <p class="cap">Green row = best. The coefficient is log-case change per extra connection per 100 people.</p></div>
+      <div class="card"><h3>2022 cross-section</h3>
+        <img class="fig" src="assets/fig6_teledensity.png" alt="2022 cases against tele-density">
+        <p class="cap">Essentially flat (r = −0.03): the national trend in section 2 does not survive at State level.</p></div>
+    </div>
+    <div class="note" style="margin-top:14px"><b>Read carefully.</b> Circle values aggregate neighbouring States
+    (Andhra Pradesh includes Telangana; Bihar includes Jharkhand; Madhya Pradesh includes Chhattisgarh; Maharashtra includes
+    Goa; Uttar Pradesh includes Uttarakhand; West Bengal includes Sikkim; the North-East circle covers six States). The merge
+    is a robustness check, not a causal estimate. Mapping is documented in <code>data/circle_state_map.csv</code>.</div>
   </section>
 
   <section id="clusters">

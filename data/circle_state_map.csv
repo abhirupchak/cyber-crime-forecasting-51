@@ -1,0 +1,37 @@
+state,circle,note
+Andhra Pradesh,Andhra Pradesh,
+Arunachal Pradesh,North East,NE circle aggregates six states
+Assam,Assam,
+Bihar,Bihar,circle includes Jharkhand
+Chhattisgarh,Madhya Pradesh,circle includes Chhattisgarh
+Goa,Maharashtra,circle includes Goa
+Gujarat,Gujarat,
+Haryana,Haryana,
+Himachal Pradesh,Himachal Pradesh,
+Jharkhand,Bihar,circle includes Jharkhand
+Karnataka,Karnataka,
+Kerala,Kerala,
+Madhya Pradesh,Madhya Pradesh,
+Maharashtra,Maharashtra,
+Manipur,North East,NE circle aggregates six states
+Meghalaya,North East,NE circle aggregates six states
+Mizoram,North East,NE circle aggregates six states
+Nagaland,North East,NE circle aggregates six states
+Odisha,Orissa,
+Punjab,Punjab,
+Rajasthan,Rajasthan,
+Sikkim,West Bengal,circle includes Sikkim
+Tamil Nadu,Tamil Nadu,
+Telangana,Andhra Pradesh,circle includes Telangana
+Tripura,North East,NE circle aggregates six states
+Uttar Pradesh,Uttar Pradesh,
+Uttarakhand,Uttar Pradesh,circle includes Uttarakhand
+West Bengal,West Bengal,
+Andaman and Nicobar Islands,Tamil Nadu,assumed TN circle
+Chandigarh,Punjab,assumed Punjab circle
+Dadra and Nagar Haveli and Daman and Diu,Gujarat,assumed Gujarat circle
+Delhi,Delhi,
+Jammu and Kashmir,J&K,
+Ladakh,J&K,circle includes Ladakh
+Lakshadweep,Kerala,assumed Kerala circle
+Puducherry,Tamil Nadu,assumed TN circle

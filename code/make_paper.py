@@ -13,6 +13,7 @@ PAPER = os.path.join(BASE, 'paper')
 os.makedirs(PAPER, exist_ok=True)
 dfc = pd.read_csv(os.path.join(OUT, 'clusters.csv'))
 per = pd.read_csv(os.path.join(OUT, 'per_state_forecast.csv'))
+mp = pd.read_csv(os.path.join(BASE, 'data', 'circle_state_map.csv'))
 cl = dfc.groupby('kmeans')
 names = {0: 'C0 Micro-UT / very low count', 1: 'C1 Hill, NE and small States',
          2: 'C2 Mainstream mid-volume', 3: 'C3 High-volume fast-riser'}
@@ -100,7 +101,9 @@ P('Problem. State cyber-crime registrations in India are rising fast, but five y
   'by their growth profiles using k-means and Ward hierarchical clustering. '
   'Results. Persistence is hardest to beat (RMSE 1,360; MAE 581; R² 0.861); ridge improves on trend models (RMSE 1,855; R² 0.742) but not on persistence. '
   'National registrations track internet subscribers (r = 0.981) and UPI volume (r = 0.987), while headline tele-density falls (91.45% to 84.56%) '
-  'as a denominator artefact. Four State clusters emerge, with a high-volume fast-riser group led by Telangana, Karnataka, Uttar Pradesh and Maharashtra. '
+  'as a denominator artefact. A State-level merge with TRAI service-area tele-density adds little once State effects and trend are included '
+  '(ridge RMSE 1,833 against 1,855) and the 2022 cross-section is essentially flat (r = −0.03). '
+  'Four State clusters emerge, with a high-volume fast-riser group led by Telangana, Karnataka, Uttar Pradesh and Maharashtra. '
   'Implication. Plan by cluster, forecast with explicit uncertainty, and treat counts as reports rather than incidence.')
 P('Keywords: cyber-crime; NCRB; forecasting; ridge regression; k-means; hierarchical clustering; tele-density; UPI; SDG 9; SDG 16', i=True, size=9.5)
 
@@ -136,9 +139,14 @@ P('NCRB State/UT cyber-crime registrations 2018–2022 were obtained from the OG
   'they are informative — Sikkim recorded none in 2020–2021 and then 26 in 2022.')
 P('Penetration data come from TRAI Yearly Performance Indicators and the Oct–Dec 2022 quarterly report (December-end tele-density 91.45, 88.56, '
   '86.38, 85.91 and 84.56%; internet subscribers 604.21, 718.74, 795.18, 829.30 and 865.90 million) and from NPCI/RBI UPI volumes '
-  '(0.92, 5.34, 12.52, 22.33 and 45.96 billion transactions). TRAI reports licence service areas (for example Uttar Pradesh East and West, the '
-  'North-East, Jammu & Kashmir with Ladakh), not States; a clean State-level join is therefore impossible. Penetration is analysed ecologically '
-  'at the national level and this is stated as a limitation rather than hidden.')
+  '(0.92, 5.34, 12.52, 22.33 and 45.96 billion transactions).')
+P('For the State-level merge requested in the brief, TRAI Table 1.5 (service-area-wise tele-density) was transcribed for 2018–2022 and mapped to '
+  'States using the licence-service-area definitions: Andhra Pradesh includes Telangana; Bihar includes Jharkhand; Madhya Pradesh includes '
+  'Chhattisgarh; Maharashtra includes Goa; Uttar Pradesh includes Uttarakhand; West Bengal includes Sikkim; the North-East circle covers Arunachal '
+  'Pradesh, Manipur, Meghalaya, Mizoram, Nagaland and Tripura; Chandigarh is in Punjab, Puducherry and the Andaman and Nicobar Islands in Tamil '
+  'Nadu, Lakshadweep in Kerala, and Dadra and Nagar Haveli and Daman and Diu in Gujarat. The mapping is documented in data/circle_state_map.csv. '
+  'Because the circle values aggregate neighbouring States, merged tele-density is an approximation and is used as a predictor, not as a causal '
+  'variable. The 19-circle table and its provenance are in data/teledensity_circle.csv; the merged panel is outputs/panel_with_teledensity.csv.')
 
 # ---------------- 3 METHOD ----------------
 H('3. Method in plain language')
@@ -148,6 +156,9 @@ P('Training uses 2018–2021 and testing uses 2022, so no model sees the future.
   'Kennard, 1970); the penalty is chosen on a 2021 holdout from {0.1, 1, 10, 100, 1000}. A quadratic trend with ridge allows curvature. Accuracy '
   'is reported as RMSE (sensitive to large misses), MAE (typical miss) and R² (improvement over the mean). Persistence is included as a formal '
   'comparator because simple benchmarks routinely beat complex models on short series (Makridakis et al., 2020; Hyndman and Athanasopoulos, 2021).')
+P('A further specification adds the merged tele-density as a predictor: log(1 + cases) = alpha_s + beta t + gamma tele-density_s,t + e. '
+  'The coefficient gamma is read as the change in log cases per additional connection per 100 people, holding State and trend fixed. Because '
+  'tele-density is circle-aggregated for several States, this model is a robustness check rather than a causal estimate.')
 P('For profiling, each State is represented by its five-year log-count vector, standardised year by year, and clustered with k-means (MacQueen, '
   '1967; 20 restarts) and Ward hierarchical clustering (Ward, 1963). Silhouette scores (Rousseeuw, 1987) are computed for k = 2 to 6. We retain '
   'k = 4 for planning usefulness while reporting that k = 2 maximises separation. All code is in run_experiments.py with a fixed seed of 42.')
@@ -195,6 +206,22 @@ doc.add_picture(os.path.join(OUT, 'fig3_clusters.png'), width=Inches(5.2))
 caption('Fig. 4. Ridge forecast versus observed 2022 counts. Points below the diagonal are under-predictions.')
 doc.add_picture(os.path.join(OUT, 'fig2_obs_pred.png'), width=Inches(3.6))
 
+P('4.4 State-level tele-density merge. Table 3 adds the merged tele-density to the pooled specification. The penalty is small: the best learned '
+  'model with tele-density (ridge, RMSE 1,833) improves on the trend-only ridge (1,855) by about 1% but remains far behind persistence. The '
+  'coefficient is −0.004 log points per additional connection per 100 people, effectively zero at the scale of observed variation. Correlations '
+  'confirm the null: pooled r = −0.12, within-State r = −0.23, and the 2022 cross-section r = −0.03 (Fig. 5). The strong national association '
+  'in Fig. 2 is therefore a shared time trend, not a State-level relationship — a useful caution when a single national series is used to justify '
+  'local policy.')
+P('Table 3. Does State tele-density improve the forecast? (2022 holdout.)', b=True, size=9)
+table(['Model', 'RMSE', 'MAE', 'R²', 'coef. tele-density'],
+      [['Persistence', '1,359.8', '580.8', '0.861', '—'],
+       ['OLS + tele-density', '1,893.1', '712.4', '0.731', '−0.0039'],
+       ['OLS + log tele-density', '1,846.2', '689.1', '0.745', '−1.3455'],
+       ['Ridge + tele-density', '1,833.0', '640.4', '0.748', '−0.0077']],
+      bold_first_col=True)
+caption('Fig. 5. State-level cross-section: 2022 log registrations against December 2022 tele-density. The relationship is essentially flat (r = −0.03).')
+doc.add_picture(os.path.join(OUT, 'fig6_teledensity.png'), width=Inches(4.8))
+
 # ---------------- 5 PLANNING ----------------
 H('5. What this means for cyber-police planning')
 box('For a district cyber cell, next quarter', [
@@ -217,15 +244,16 @@ box('What this note does not say', [
 # ---------------- 7 CONCLUSION ----------------
 H('7. Conclusion')
 P('Five years of NCRB data support profiling more than precise point forecasting. Registrations grow at roughly 21% a year on a log scale and track '
-  'digital penetration almost one-to-one at the national level. Four growth clusters offer a practical basis for resource allocation. The clearest '
-  'next step is to extend the series with crime-head detail and circle-to-State telecom mapping, and to re-train annually rather than treat any '
-  'single forecast as fixed.')
+  'digital penetration almost one-to-one at the national level, but the State-level tele-density merge shows that this association does not survive '
+  'once State effects and trend are included. Four growth clusters offer a practical basis for resource allocation. The clearest next steps are to '
+  'extend the series with crime-head detail and State-level internet/UPI data, and to re-train annually rather than treat any single forecast as fixed.')
 
 # ---------------- DECLARATIONS ----------------
 H('Declarations')
 P('Data availability. NCRB State/UT cyber-crime registrations 2018–2022 via the OGD Platform India (GODL-India); the working copy is datafile.xls. '
   'TRAI Yearly Performance Indicators 2019 (25 November 2020), 2020 (15 September 2021), 2021 (8 July 2022) and the Oct–Dec 2022 quarterly report '
-  '(31 May 2023) provide tele-density and internet figures. UPI volumes follow NPCI/RBI financial-year series. Cleaned tables and figures are in outputs/; '
+  '(31 May 2023) provide tele-density and internet figures, including Table 1.5 service-area tele-density transcribed in data/teledensity_circle.csv '
+  'with the State mapping in data/circle_state_map.csv. UPI volumes follow NPCI/RBI financial-year series. Cleaned tables and figures are in outputs/; '
   'run_experiments.py regenerates all results with seed 42.', size=9.5)
 P('Conflict of interest. None. Funding. None.', size=9.5)
 P('Declaration of generative AI and AI-assisted technologies. During the preparation of this work, the author used OpenCode, an AI coding '
@@ -267,6 +295,12 @@ table(['k', 'k-means silhouette', 'Ward silhouette', 'Inertia'],
        [5, '0.412', '0.437', '12.9'], [6, '0.389', '0.423', '10.2']])
 caption('Fig. A1. Ward dendrogram of State growth profiles.')
 doc.add_picture(os.path.join(OUT, 'fig4_dendrogram.png'), width=Inches(6.0))
+
+H('Appendix B. Tele-density merge: circle-to-State mapping')
+P('TRAI publishes tele-density by licence service area, not by State. The mapping below is used for the State-level merge in Section 4.4; aggregated '
+  'circles are flagged in the note column.', size=9.5)
+table(['State/UT', 'TRAI circle', 'Note'],
+      [[r['state'], r['circle'], ('' if pd.isna(r['note']) else r['note'])] for _, r in mp.iterrows()])
 
 doc.save(os.path.join(PAPER, 'Short_Communication_51_CyberCrime_Abhirup_24020570039.docx'))
 print('saved')

@@ -117,6 +117,47 @@ cl=pd.DataFrame({"state":dfm["state"],"kmeans":kml,"ward":ag.labels_,
  "mean_log":M.mean(axis=1),"cagr_18_21":((dfm["2021"]/dfm[["2018"]].replace(0,np.nan)["2018"])**(1/3)-1)})
 cl.to_csv(os.path.join(OUT,"clusters.csv"),index=False)
 print(cl.sort_values("kmeans").to_string(index=False))
+# ---------------- State-level tele-density merge ----------------
+td = pd.read_csv(os.path.join(BASE, "data", "teledensity_circle.csv"))
+mp = pd.read_csv(os.path.join(BASE, "data", "circle_state_map.csv"))[["state", "circle"]]
+tdl = td.melt(id_vars="circle", var_name="year", value_name="teledensity")
+tdl["year"] = tdl["year"].astype(int)
+panel = (long.merge(mp, on="state", how="left")
+             .merge(tdl, on=["circle", "year"], how="left"))
+assert panel["teledensity"].notna().all(), "unmapped state/circle"
+panel.to_csv(os.path.join(OUT, "panel_with_teledensity.csv"), index=False)
+ptr = panel[panel.year <= 2021]; pte = panel[panel.year == 2022]
+enc2 = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
+S2tr = enc2.fit_transform(ptr[["state"]]); S2te = enc2.transform(pte[["state"]])
+T2tr = ptr["t"].values.reshape(-1, 1); T2te = pte["t"].values.reshape(-1, 1)
+D2tr = ptr["teledensity"].values.reshape(-1, 1); D2te = pte["teledensity"].values.reshape(-1, 1)
+LD2tr = np.log(ptr["teledensity"].values).reshape(-1, 1); LD2te = np.log(pte["teledensity"].values).reshape(-1, 1)
+y2tr = ptr["logcases"].values
+ols_td = LinearRegression().fit(np.hstack([S2tr, T2tr, D2tr]), y2tr)
+ptd = back(ols_td.predict(np.hstack([S2te, T2te, D2te])))
+ols_ltd = LinearRegression().fit(np.hstack([S2tr, T2tr, LD2tr]), y2tr)
+pltd = back(ols_ltd.predict(np.hstack([S2te, T2te, LD2te])))
+rg_td = Ridge(alpha=0.1).fit(np.hstack([S2tr, T2tr, D2tr]), y2tr)
+prtd = back(rg_td.predict(np.hstack([S2te, T2te, D2te])))
+r1 = m(y_te, ptd); r2 = m(y_te, pltd); r3 = m(y_te, prtd)
+tbl_td = pd.DataFrame({
+    "Model": ["Persistence", "OLS + tele-density", "OLS + log tele-density", "Ridge + tele-density"],
+    "RMSE": [res.loc[0, "RMSE"], r1[0], r2[0], r3[0]],
+    "MAE": [res.loc[0, "MAE"], r1[1], r2[1], r3[1]],
+    "R2": [res.loc[0, "R2"], r1[2], r2[2], r3[2]],
+    "coef_teledensity": [np.nan, ols_td.coef_[-1], ols_ltd.coef_[-1], rg_td.coef_[-1]],
+})
+tbl_td.to_csv(os.path.join(OUT, "table_teledensity.csv"), index=False)
+print(tbl_td.to_string(index=False))
+pooled_r = np.corrcoef(panel["logcases"], panel["teledensity"])[0, 1]
+dem = panel.copy()
+dem["lc"] = dem["logcases"] - dem.groupby("state")["logcases"].transform("mean")
+dem["td"] = dem["teledensity"] - dem.groupby("state")["teledensity"].transform("mean")
+within_r = np.corrcoef(dem["lc"], dem["td"])[0, 1]
+x22 = panel[panel.year == 2022]
+cross_r = np.corrcoef(x22["logcases"], x22["teledensity"])[0, 1]
+print(f"tele-density r: pooled={pooled_r:.3f} within-state={within_r:.3f} cross-section2022={cross_r:.3f}")
+
 # Figures: two-panel penetration chart (clear dual axes, explicit legends)
 fig, axes = plt.subplots(1, 2, figsize=(10, 3.8))
 x = np.array(YEARS)
@@ -168,6 +209,18 @@ plt.tick_params(axis="y",labelsize=8)
 plt.xticks(fontsize=8); plt.yticks(fontsize=8)
 plt.tight_layout()
 plt.savefig(os.path.join(OUT,"fig5_surprise.png"),dpi=150,bbox_inches="tight");plt.close()
+# state-level tele-density scatter
+plt.figure(figsize=(6.4,4.2))
+plt.scatter(x22["teledensity"], x22["logcases"], s=28, color="#2c5282", alpha=.85)
+for i, (_, r) in enumerate(x22.nlargest(5, "cases").iterrows()):
+    off = (5, 5) if i % 2 == 0 else (5, -10)
+    plt.annotate(r["state"], (r["teledensity"], r["logcases"]), fontsize=7,
+                 xytext=off, textcoords="offset points")
+plt.xlabel("Tele-density, December 2022 (%)")
+plt.ylabel("log(1 + cases), 2022")
+plt.title(f"State-level cross-section (r = {cross_r:.2f})")
+plt.tight_layout()
+plt.savefig(os.path.join(OUT,"fig6_teledensity.png"),dpi=150,bbox_inches="tight");plt.close()
 L=linkage(Z,method="ward")
 plt.figure(figsize=(9,4));dendrogram(L,labels=list(dfm["state"]),leaf_rotation=90,leaf_font_size=7)
 plt.title("Ward dendrogram of state growth profiles");plt.tight_layout()
